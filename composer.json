@@ -16,7 +16,7 @@
         "php": ">=5"
     },
     "require-dev": {
-        "firephp/firephp-core": "*"
+        "firephp/firephp-core": "dev-master"
     },
     "autoload": {
         "psr-0": {
