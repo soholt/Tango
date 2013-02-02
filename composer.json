@@ -1,0 +1,23 @@
+{
+    "name": "soholt/tango",
+    "description": "php admin",
+    "keywords": ["php","admin"],
+    "homepage": "https://github.com/soholt/tango",
+    "license": "TODO",
+    "authors": [
+        {
+            "name": "Gin",
+            "email": "gin@soho.lt",
+            "homepage": "http://soho.lt",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5"
+    },
+    "autoload": {
+        "psr-0": {
+            "tango": "src"
+        }
+    }
+}
