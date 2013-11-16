@@ -1,26 +1,41 @@
 {
     "name": "soholt/tango",
-    "description": "php admin",
-    "keywords": ["php","admin"],
-    "homepage": "https://github.com/soholt/tango",
-    "license": "TODO",
+    "description": "Tango Admin Panel",
+    "homepage": "http://github.com/soholt/tango",
+    "license": "TODO, dual licensing",
+    "keywords": [
+        "tango admin panel",
+        "php admin",
+        "tango",
+        "admin",
+        "panel",
+        "unix",
+        "linux",
+        "bsd",
+        "solaris",
+        "osx",
+        "php"
+    ],
     "authors": [
         {
-            "name": "Gin",
+            "name": "Gin, Gintaras Valatka",
             "email": "gin@soho.lt",
             "homepage": "http://soho.lt",
             "role": "Developer"
         }
     ],
     "require": {
-        "php": ">=5"
+        "php": ">=5.4",
+        "phpseclib/phpseclib": "0.3.*",
+        "doctrine/doctrine-orm-module": "0.7.*"
+
     },
     "require-dev": {
-        "firephp/firephp-core": "dev-master"
-    },
-    "autoload": {
-        "psr-0": {
-            "tango": "src"
-        }
+        "phpunit/PHPUnit": "3.7.*",
+        "zendframework/zendframework": "2.2.*",
+        "zendframework/zftool":"dev-master",
+        "zendframework/zend-developer-tools":"dev-master",
+        "bjyoungblood/bjy-profiler":"dev-master",
+        "monolog/monolog":"dev-master"
     }
 }
