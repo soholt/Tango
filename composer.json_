@@ -1,0 +1,29 @@
+{
+    "name": "soholt/tango",
+    "description": "php admin",
+    "keywords": ["php","admin"],
+    "homepage": "https://github.com/soholt/tango",
+    "license": "TODO",
+    "authors": [
+        {
+            "name": "Gin",
+            "email": "gin@soho.lt",
+            "homepage": "http://soho.lt",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5"
+    },
+    "require-dev": {
+        "php": ">=5.3",
+        "firephp/firephp-core": "dev-master",
+        "phpunit/phpunit": "3.7.13",
+        "monolog/monolog": "dev-master"
+    },
+    "autoload": {
+        "psr-0": {
+            "tango": "src"
+        }
+    }
+}

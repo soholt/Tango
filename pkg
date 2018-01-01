@@ -1,0 +1,9 @@
+#!/bin/sh
+
+rm -r -f application/cache/*
+rm -r -f application/logs/*
+
+echo `date '+%y%m%d'` > application/classes/version.php	#	'+%Y%m%d%H%M%S'
+
+tar -cvzf /var/www/tango.tar.gz .
+

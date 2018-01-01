@@ -1,0 +1,483 @@
+#!/bin/sh
+#
+#	TODO pass in params to use it as a slave --master=ip or fqdn --secret=my_very_secret
+#	nothing todo for standalone
+#	TODO SERVER ROOT IN HOME OR IN OPT ?
+#
+#	YaY! this is my first ever sh
+#
+#	TODO	allow lighttpd access only from local lans 
+#	TODO	chose port default 81
+#   TODO    unzip downloaded app using gzip so ne need to install unzip
+#
+
+clear
+
+#	DEV TMP
+rm -r -f /opt/tango/*
+rm -r -f /home/gin/www/tango/application/cache/*
+rm -r -f /home/gin/www/tango/application/logs/*
+rm -r -f /home/gin/www/tango/lighttpd/*
+tar -cvzf tango.tar.gz -C /home/gin/www/tango . --exclude-vcs --exclude=kohana-3.3.0 --exclude='.settings'
+mv /home/gin/www/tango/tango.tar.gz /home/gin/www/tango/www/tango.tar.gz
+
+
+TANGO_PKG='http://tango/tango.tar.gz'
+TANGO_PORT='81'	# LIGHTTPD SERVER PORT
+TANGO_PATH='/opt/tango' # WHERE TO INSTALL TANGO
+
+#LIGHTTPD_CONF_FILE_UBUNTU='/etc/lighttpd/lighttpd.conf'
+#LIGHTTPD_CONF_FILE_SOLARIS='/etc/lighttpd/lighttpd.conf'
+
+echo '
+-------------
+    TANGO
+-------------
+'
+
+#	CHECK IF ROOT	#test "$(whoami)" != 'root' && (echo shit; exit 1)
+
+if [ `whoami` != "root" ]; then
+	echo 'THIS SCRIPT MUST BE RUN AS ROOT (TYPE su OR sudo su THEN TRY AGAIN)'
+	echo ''
+	exit
+fi
+
+cd ~
+
+#	FIND OUT THE OS
+
+if [ -f '/etc/issue' ]; then
+	OS_INFO=`cat /etc/issue`
+else
+	OS_INFO=`uname -a`
+fi
+
+#echo $OS_INFO
+#echo ''
+
+#	OS
+case "$OS_INFO" in 
+    *FreeBSD*)
+    	OS='freebsd'
+    	SUDOERS='/usr/local/etc/sudoers.d/tango'
+    	;;
+	*Debian*)
+		OS='debian'
+		SUDOERS='/etc/sudoers.d/tango'
+		;;
+	*Ubuntu*)
+		OS='ubuntu'
+		SUDOERS=/etc/sudoers.d/tango
+		;;
+	#*SunOS solaris 5.11 11.0 i86pc i386 i86pc*) OS='solaris' ;;	#	solaris 11
+	#*solaris*) OS='solaris' ;;
+	*)
+		SUDOERS='/etc/sudoers.d/tango'
+		OS='OPRATING SYSTEM NAME NOT FOUND'
+		;;
+esac
+
+echo $OS
+
+#	ADD GROUOP
+
+if [ -z `grep tango /etc/group` ]; then
+    
+    echo 'CREATING GROUP tango'
+    
+    if [ $OS == 'freebsd' ]; then
+    	pw groupadd tango
+    else
+    	groupadd tango
+    fi
+    
+fi
+
+
+#	ADD USER
+
+if [ -z `grep tango /etc/passwd` ]; then
+#if grep tango /etc/passwd; then
+
+    echo 'CREATING USER tango'
+    
+    if [ $OS == 'freebsd' ]; then
+    	pw user add tango
+    	pw groupmod tango -m tango
+    else
+    	useradd -g tango -s /bin/false tango
+    fi
+    
+fi
+
+
+
+#	CREATE DIRS
+
+if [ ! -d '/opt' ]; then
+    mkdir -p '/opt'
+fi
+
+if [ ! -d $TANGO_PATH ]; then
+    mkdir -p $TANGO_PATH
+fi
+
+if [ ! -d ${TANGO_PATH}'/tango' ]; then #	TANGO LOGS AND CONFIGS
+    mkdir -p ${TANGO_PATH}'/tango'
+fi
+
+# -------------------------- LIGHTTPD CONFIGURATION
+
+#	CREATE DIRS FOR LIGHTTPD
+
+if [ ! -d ${TANGO_PATH}'/lighttpd/uploads' ]; then
+    mkdir -p ${TANGO_PATH}'/lighttpd/uploads'
+    chown tango:tango ${TANGO_PATH}'/lighttpd/uploads'
+fi
+
+if [ ! -f ${TANGO_PATH}'/lighttpd/error.log' ]; then
+    touch ${TANGO_PATH}'/lighttpd/error.log'
+    chown tango:tango ${TANGO_PATH}'/lighttpd/error.log'
+fi
+
+
+# -------------------------- FUNCTIONS
+
+freebsd()
+{
+
+	echo 'INSTALLING PACKAGES'
+	
+	#TODO maybe show download install progress
+	#pkg_add -r sudo lighttpd #-rv
+	#wget -O- $TANGO_PKG | tar zxv -C $TANGO_PATH
+	
+	LIGHTTPD_CONF=`find /usr/local/e* -name lighttpd.conf`
+	
+#	echo '#tango' > $LIGHTTPD_CONF
+#	echo 'server.port = 81' >> $LIGHTTPD_CONF
+#	echo 'include "modules.conf"' >> $LIGHTTPD_CONF
+#	echo 'server.username = "tango"' >> $LIGHTTPD_CONF
+#	echo 'server.groupname = "tango"' >> $LIGHTTPD_CONF
+#	echo 'server.pid-file = "'${TANGO_PATH}/lighttpd/lighttpd.pid'"' >> $LIGHTTPD_CONF
+#	echo 'server.errorlog = "'${TANGO_PATH}/lighttpd/error.log'"' >> $LIGHTTPD_CONF
+#	echo 'server.document-root = "'${TANGO_PATH}'"' >> $LIGHTTPD_CONF
+	
+echo '
+#tango
+include "modules.conf"
+#mod_fastcgi,mod_rewrite
+server.port = 81
+server.username = "tango"
+server.groupname = "tango"
+server.pid-file = "'${TANGO_PATH}/lighttpd/lighttpd.pid'"
+server.errorlog = "'${TANGO_PATH}/lighttpd/error.log'"
+server.document-root = "'${TANGO_PATH}'"
+#######
+' > $LIGHTTPD_CONF
+	
+	#echo 'index-file.names = ( "index.php", "index.html", "index.htm", "default.htm" )' >> $LIGHTTPD_CONF
+	
+	if grep lighttpd_enable /etc/rc.conf; then
+		#do nothing
+		echo ''
+	else
+		echo 'lighttpd_enable="YES"' >> /etc/rc.conf
+	fi
+	
+	#echo `/usr/local/etc/rc.d/lighttpd start`
+	#echo $LIGHTTPD_CONF
+
+}
+
+debian()
+{
+
+	#DOWNLOAD & EXCTRACT TANGO (downloading here as we need www dir before restarting lighttpd)
+	wget -O- $TANGO_PKG | tar zxv -C $TANGO_PATH
+	#http://dev.kohanaframework.org/attachments/download/1670/kohana-3.2.0.zip
+
+#exit	#	testing only dev	
+
+	echo 'INSTALLING PACKAGES'
+	apt-get update
+	apt-get install -y sudo lighttpd php5-cgi php5-auth-pam
+
+	# to make sure only one conf found if theres more, (on solaris is in /etc/lighttpd/1.4/lighttpd.conf)	
+	LIGHTTPD_CONF=`find /etc/l* -name lighttpd.conf`
+ 
+
+	#BACKUP ORIGINAL LIGHTTPD FILE
+	if [ ! -f ${LIGHTTPD_CONF}'.orig' ]; then
+    	cp $LIGHTTPD_CONF ${LIGHTTPD_CONF}'.orig'
+	fi
+
+echo 'server.modules = ("mod_access",	"mod_alias","mod_compress", "mod_redirect", "mod_rewrite")
+
+server.port = '${TANGO_PORT}'
+server.document-root = "'${TANGO_PATH}'/www"
+
+#server.errorlog = "/var/log/lighttpd/error.log"
+server.errorlog = "'${TANGO_PATH}'/lighttpd/error.log"
+server.pid-file = "'${TANGO_PATH}'/lighttpd/lighttpd.pid"
+server.username = "tango"
+server.groupname = "tango"
+
+server.upload-dirs = ("'${TANGO_PATH}'/lighttpd/uploads")
+
+index-file.names = ("index.php", "index.html", "index.htm")
+
+url.access-deny = ("~", ".inc")
+
+static-file.exclude-extensions = (".php", ".pl", ".fcgi")
+
+dir-listing.encoding = "utf-8"
+server.dir-listing = "enable"
+
+# IF YOU WANT TO COMPRESS AND THE DIR IS NOT WRITABLE BY TANGO, CHANGE TO OTHER DIR AND UPDATE CROND JOBS FOR CLEANING IT
+#compress.cache-dir = "/var/cache/lighttpd/compress/"
+#compress.filetype = ( "application/x-javascript", "text/css", "text/html", "text/plain" )
+
+include_shell "/usr/share/lighttpd/create-mime.assign.pl"
+include_shell "/usr/share/lighttpd/include-conf-enabled.pl"
+
+url.rewrite-if-not-file = ("^/(.+)/?$" => "index.php/$1")
+' > $LIGHTTPD_CONF
+
+	#LIGHTTPD_CONF=`find /etc -name lighttpd.conf`
+	
+	killall lighttpd #	/etc/init.d/lighttpd stop - DOES NOT ALWAYS WORK
+	
+	#	BACKUP ORIGINAL CONFIG
+	#if [ ! -f ${LIGHTTPD_CONF}'.orig' ]; then
+	#	cp $LIGHTTPD_CONF ${LIGHTTPD_CONF}'.orig'
+	#fi
+	
+	#	WRITE TANGO CONFIG (TODO ---> DOH! ubuntu puts everything on 1 line... HELP!)
+	#echo $LIGHTTPD_CONF_TANGO > $LIGHTTPD_CONF
+	
+	##echo "cgi.fix_pathinfo=1" >> /etc/php5/cgi/php.ini
+	
+	lighttpd-enable-mod fastcgi
+	lighttpd-enable-mod fastcgi-php
+
+	/etc/init.d/lighttpd start
+}
+
+
+ubuntu()
+{
+	
+	echo 'INSTALLING PACKAGES'
+	#apt-get update
+	apt-get install -y sudo lighttpd php5-cgi
+	
+	killall lighttpd #	/etc/init.d/lighttpd stop - DOES NOT ALWAYS WORK
+	
+	#	BACKUP ORIGINAL CONFIG
+	if [ ! -f ${LIGHTTPD_CONF_FILE_UBUNTU}'.orig' ]; then
+		cp $LIGHTTPD_CONF_FILE_UBUNTU ${LIGHTTPD_CONF_FILE_UBUNTU}'.orig'
+	fi
+	
+	#	WRITE TANGO CONFIG (TODO ---> DOH! ubuntu puts everything on 1 line... HELP!)
+	#echo $LIGHTTPD_CONF_TANGO > $LIGHTTPD_CONF_FILE_UBUNTU
+	
+	##echo "cgi.fix_pathinfo=1" >> /etc/php5/cgi/php.ini
+	
+	lighttpd-enable-mod fastcgi
+	lighttpd-enable-mod fastcgi-php
+
+	/etc/init.d/lighttpd start
+}
+
+solaris()
+{
+	echo 'INSTALLING PACKAGES'
+
+	#pfexec pkg install pkg:/package/pkg
+	#restart
+	#pkg update #660mb
+	
+	#pkg install lighttpd php-52 #php #php5-cgi
+	
+}
+
+
+
+
+#	RUN OS SPECIFIC FUNCTION
+
+case "$OS_INFO" in 
+    *FreeBSD*) freebsd ;;
+	*Debian*) debian ;;
+	*Ubuntu*) ubuntu ;;
+	#*SunOS solaris 5.11 11.0 i86pc i386 i86pc*) solaris ;;	#	solaris 11
+	#*solaris*) solaris ;;
+	*) 'OPRATING SYSTEM NAME NOT FOUND' ;;
+esac
+
+	
+
+
+
+
+
+#	SET PERMISSIONS
+
+chown -R tango:tango ${TANGO_PATH}
+
+#chown -R tango:tango /var/log/lighhtpd
+#chmod -R 777 $TANGO_PATH # TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#chmod -R 700 /opt/tango/www/tango
+
+
+#	SUDOERS (THE LAST BIT, IN CASE IT NEEDS TO BE INSTALLED FIRST IN THE ABOVE FUNCTION)
+touch $SUDOERS
+echo "tango ALL = NOPASSWD: ALL" > $SUDOERS
+chmod 0440 $SUDOERS
+  
+
+
+echo 'DONE'
+
+exit
+
+
+
+p - set port
+n - set network
+x - exit
+
+
+
+echo "Enter your username:"
+read username
+
+if [ "$username" = "blessen" ]
+then
+	echo 'Success!!! You are now logged in.'
+else
+	echo 'Sorry, wrong username.'
+fi
+
+exit
+
+if [ -z `cat /etc/issue | grep Ubuntu`]
+		then echo 'ubuntu'
+	
+fi
+
+exit
+
+
+#if [ ! -d $path ]
+#    then mkdir $path/www
+#fi
+
+#cpufrequtils powernowd
+
+apt-get -y install sudo lighttpd php5-cgi
+
+
+
+exit(0);
+
+# find config
+lighttpd_conf=$(find /etc -name 'lighttpd.conf')
+echo '-----------------------------------------------'
+# find service name TODO
+lighttpd_service=$(find /etc/init.d -name lighttpd*)
+lighttpd_service_name='lighttpd'
+
+#lighttpd_conf_orig="$lighttpd_conf.orig"
+
+
+#echo $lighttpd_conf
+#echo $lighttpd_conf
+#echo $lighttpd_conf_orig
+
+echo $lighttpd_conf
+#if [ -a $lighttpd_conf ]
+#if [ -a /etc/lighttpd/lighttpd.original ]
+#if [ ! -a $lighttpd_conf ]
+#    then echo 'not'
+#	cp $lighttpd_conf $lighttpd_conf.orig
+#fi
+
+/etc/init.d/lighttpd stop
+
+#on some systems it might not stop
+if ps ax | grep -v grep | grep $lighttpd_service_name > /dev/null
+    then killall -9 $lighttpd_service_name
+fi
+
+#if [ -a /etc/lighttpd/lighttpd.original ]
+#    then
+#	echo 'sdfsdfsdf';
+#	cp /etc/lighttpd/lighttpd.conf /etc/lighttpd/lighttpd.original
+#fi
+
+touch $path/error.log
+
+# TODO UPLOAD DIR
+echo '
+server.modules = (
+#    "mod_access",
+#    "mod_alias",
+#    "mod_compress",
+#    "mod_redirect",
+    "mod_rewrite",
+)
+
+server.port          = 81
+server.document-root = "'$path'/www"
+server.upload-dirs   = ( "/var/cache/lighttpd/uploads" )
+server.errorlog      = "'$path'/error.log"
+server.pid-file      = "'$path'/lighttpd.pid"
+server.username      = "'$name'"
+server.groupname     = "'$name'"
+
+index-file.names  = ( "index.php", "index.html", "index.htm", "default.htm", " index.lighttpd.html" )
+
+url.access-deny = ( "~", ".inc" )
+
+static-file.exclude-extensions = ( ".php", ".pl", ".fcgi" )
+
+#include_shell "/usr/share/lighttpd/use-ipv6.pl"
+
+dir-listing.encoding = "utf-8"
+server.dir-listing   = "enable"
+
+#compress.cache-dir   = "/var/cache/lighttpd/compress/"
+#compress.filetype    = ( "application/x-javascript", "text/css", "text/html", "text/plain" )
+
+include_shell "/usr/share/lighttpd/create-mime.assign.pl"
+include_shell "/usr/share/lighttpd/include-conf-enabled.pl"
+
+url.rewrite-once = (
+    "(css|img|js)/(.*)" => "/$1/$2",
+    "^/(.+)$" => "index.php/$1"
+)
+' > $lighttpd_conf
+
+lighttpd-enable-mod fastcgi
+lighttpd-enable-mod fastcgi-php
+#lighttpd-enable-mod simple-vhost
+
+
+
+/etc/init.d/lighttpd start
+
+
+#cp /etc/lighttpd/conf-available/10-simple-vhost.conf /etc/lighttpd/conf-available/10-simple-vhost.original
+#echo '#server.port = 81
+#server.modules += ( "mod_simple_vhost" )
+#simple-vhost.server-root         = "'$path'/www"
+#simple-vhost.document-root       = "htdocs"
+##simple-vhost.default-host        = "www.example.com"
+#' > /etc/lighttpd/conf-available/10-simple-vhost.conf
+
+
+
+

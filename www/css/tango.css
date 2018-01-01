@@ -1,0 +1,154 @@
+/*demo page css*/
+/*body{ font: 100% "Trebuchet MS", sans-serif; margin: 50px;}*/
+body {
+	font-family: arial;
+}
+
+.demoHeaders {
+	margin-top: 2em;
+}
+
+#dialog_link {
+	padding: .4em 1em .4em 20px;
+	text-decoration: none;
+	position: relative;
+}
+
+#dialog_link span.ui-icon {
+	margin: 0 5px 0 0;
+	position: absolute;
+	left: .2em;
+	top: 50%;
+	margin-top: -8px;
+}
+
+ul#icons {
+	margin: 0;
+	padding: 0;
+}
+
+ul#icons li {
+	margin: 2px;
+	position: relative;
+	padding: 4px 0;
+	cursor: pointer;
+	float: left;
+	list-style: none;
+}
+
+ul#icons span.ui-icon {
+	float: left;
+	margin: 0 4px;
+}
+
+#out {
+
+    color: #777;
+    font-size: .8em;
+
+}
+#clearCache {
+	text-decoration:line-through;
+	position:absolute;
+	right:0px;
+}
+
+#shOutput {
+	overflow: auto;
+    color: #456;
+    height: 300px;
+    /*width: 500px;*/
+    font-size: .7em;
+    font-family: courier;
+}
+
+#progressbar{height:10px;}
+
+#cmd {
+    font-size: 1em;
+    color: #99f;
+}
+
+#console{
+	background-color:#ccc;
+	visibility:hidden;
+	}
+
+
+
+
+
+
+
+
+
+
+html, body {
+	width: 100%;
+}
+
+html {
+	height: 100%;
+	background: #444;
+}
+
+body {
+	position: relative;
+	width: 100%;
+	min-height: 100%;
+	display: block;
+	color: #ccc;
+	font-family: "Helvetica Neue", HelveticaNeue, Helvetica, Arial, sans-serif;
+	font-size: 15px;
+	line-height: 1.6em; /*1.6 * 15px = 24px*/
+	-webkit-font-smoothing: antialiased;
+}
+
+h1 {
+	letter-spacing: -1px;
+	font: bold 33px/33px "proxima-nova", "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+}
+
+h2, h3, h4 {
+	margin: 0 0 15px 0;
+}
+
+h2 {
+	font: bold 23px/23px "proxima-nova", "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+}
+
+h3 {
+	font: bold 20px/20px "proxima-nova", "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+	color: #666;
+}
+
+h4 {
+	font-size: 14px;
+}
+
+p, ul, ol {
+	line-height: 18px;
+	margin: 1em 0;
+}
+
+ul li, ol li {
+	padding: 0 0 0 5px;
+	margin: 0 0 0 20px;
+}
+
+hr {
+	clear: both;
+	border: 0;
+	border-bottom: 1px solid #ccc;
+	width: 100%;
+}
+
+
+a:link {
+    color: red;
+}
+
+
+a:visited {
+    color: green;
+}
