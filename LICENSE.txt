@@ -1,2 +1,3 @@
 Copyright (c) 2013 Gin, Gintaras Valatka
-Free for personal and charity use, commercial license terms & conditions to be confirmed.
+Free for personal use, commercial license terms & conditions to be confirmed.
+THIS CODE IS NOT TO BE USED BY UK GOVERNMENT, UK PUBLIC SECTOR AND ITS ORGANISATIONS
